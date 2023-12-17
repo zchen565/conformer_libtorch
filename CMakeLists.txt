@@ -4,10 +4,10 @@ project(example-app)
 find_package(Torch REQUIRED PATHS libtorch/share/cmake/Torch)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
-# this is just for my original test
-# add_executable(test_raw test_raw.cpp)
-# target_link_libraries(test_raw "${TORCH_LIBRARIES}")
-# set_property(TARGET test_raw PROPERTY CXX_STANDARD 17)
+this is just for my original test
+add_executable(test_raw test_raw.cc)
+target_link_libraries(test_raw "${TORCH_LIBRARIES}")
+set_property(TARGET test_raw PROPERTY CXX_STANDARD 17)
 
 add_executable(test test.cc)
 target_link_libraries(test "${TORCH_LIBRARIES}")

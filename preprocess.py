@@ -2,8 +2,8 @@ import torch
 import torchaudio
 dataset_path = "./data"
 
-# download = True to get file
-ds = torchaudio.datasets.LIBRISPEECH(root = dataset_path, url = 'train-clean-100', folder_in_archive = 'LibriSpeech', download = False)
+# download = False if you already get file
+ds = torchaudio.datasets.LIBRISPEECH(root = dataset_path, url = 'train-clean-100', folder_in_archive = 'LibriSpeech', download = True)
 
 # 
 from torch.utils.data import Subset
