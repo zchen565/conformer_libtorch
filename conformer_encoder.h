@@ -31,7 +31,7 @@ public:
         } else {
             feed_forward_residual_factor = 1;
         }
-
+        std::cout << "1" << std::endl;
         sequential = torch::nn::Sequential(
             ResidualConnectionModule(
                 torch::nn::AnyModule(
@@ -57,8 +57,8 @@ public:
                     ConformerConvModule(
                         encoder_dim,
                         conv_kernel_size,
-                        conv_expansion_factor,
-                        conv_dropout_p
+                        conv_dropout_p,
+                        conv_expansion_factor
                     )
                 )
             ),
@@ -75,11 +75,16 @@ public:
             ),
             torch::nn::LayerNorm(torch::nn::LayerNormOptions({encoder_dim}))
         );
-
+        std::cout << "2" << std::endl;
         register_module("sequential", sequential);
+
+        std::cout <<"init success" << std::endl;
     }
 
     torch::Tensor forward(torch::Tensor inputs) {
+
+        std::cout <<"forwarding" << std::endl;
+        std::cout <<inputs.sizes() <<std::endl;
         return sequential->forward(inputs);
     }
 
@@ -88,6 +93,20 @@ private:
     double feed_forward_residual_factor;
 };
 TORCH_MODULE(ConformerBlock);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Conformer Encoder
 class ConformerEncoderImpl : public torch::nn::Module {
@@ -127,12 +146,16 @@ public:
                     half_step_residual)));
         }
         register_module("conformer_layers", conformer_layers);
+        std::cout << "encoder success\n";
     }
 
     torch::Tensor forward(torch::Tensor inputs, torch::Tensor input_lengths) {
+        std::cout << "shape 153: " << inputs.sizes() << std::endl;
         std::tuple<torch::Tensor, torch::Tensor> subsample_output = conv_subsample->forward(inputs, input_lengths);
-        torch::Tensor outputs = input_projection->forward(std::get<0>(subsample_output));
-
+        std::cout << "shape 155: " << std::get<0>(subsample_output).sizes() << std::endl;
+        std::cout << "shape 156: " << std::get<1>(subsample_output).sizes() << std::endl;
+        torch::Tensor outputs = input_projection->forward(std::get<0>(subsample_output)); // problem here
+        std::cout << "shape 158: " << outputs.sizes() << std::endl;
         for (auto& layer : *conformer_layers) {
             outputs = layer.forward(outputs);
         }

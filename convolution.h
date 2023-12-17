@@ -5,7 +5,7 @@
 class DepthwiseConv1dImpl : public torch::nn::Module {
 public:
     DepthwiseConv1dImpl(int64_t in_channels, int64_t out_channels, int64_t kernel_size, 
-                        int64_t stride = 1, int64_t padding = 0, bool bias = false) {
+                        int64_t stride = 1, int64_t padding = 1, bool bias = false) {
         // Ensure the out_channels is a multiple of in_channels
         TORCH_CHECK(out_channels % in_channels == 0, "out_channels should be a constant multiple of in_channels");
 
@@ -58,12 +58,12 @@ private:
     Transpose transpose_;
 
 public:
-    ConformerConvModuleImpl(int64_t in_channels, int64_t kernel_size = 31, 
+    ConformerConvModuleImpl(int64_t in_channels, int64_t kernel_size = 3, 
                             float dropout_p = 0.1, int64_t expansion_factor = 2)
     : layer_norm(torch::nn::LayerNormOptions({in_channels})),
       pointwise_conv1(in_channels, in_channels * expansion_factor, 1),
       glu(1), 
-      depthwise_conv(in_channels, in_channels, kernel_size),
+      depthwise_conv(in_channels, in_channels,3),
       batch_norm(in_channels),
       silu(), 
       pointwise_conv2(in_channels, in_channels, 1),
@@ -93,7 +93,7 @@ public:
         x = pointwise_conv1->forward(x);
         // std::cout << "line 94 : " << x.sizes() << std::endl;
         x = glu->forward(x);
-        // std::cout << "line 96 : " << x.sizes() << std::endl;
+        std::cout << "line 96 : " << x.sizes() << std::endl;
         x = depthwise_conv->forward(x);
         std::cout << "line 98 : " << x.sizes() << std::endl;
         x = batch_norm->forward(x);
@@ -103,7 +103,7 @@ public:
         x = pointwise_conv2->forward(x);
         // std::cout << "line 104 : " << x.sizes() << std::endl;
         x = dropout->forward(x);
-        // std::cout << "line 98 : " << x.sizes() << std::endl;
+        std::cout << "line 106 : " << x.sizes() << std::endl;
         return x.transpose(1, 2);
     }
 };
@@ -113,12 +113,13 @@ TORCH_MODULE(ConformerConvModule);
 class Conv2dSubsamplingImpl : public torch::nn::Module {
 public:
     Conv2dSubsamplingImpl(int64_t in_channels, int64_t out_channels)
-    : conv1(torch::nn::Conv2dOptions(in_channels, out_channels, 3).stride(2)),
-      conv2(torch::nn::Conv2dOptions(out_channels, out_channels, 3).stride(2)),
+    : conv1(torch::nn::Conv2dOptions(in_channels, out_channels, 3).stride(2).padding(1)),
+      conv2(torch::nn::Conv2dOptions(out_channels, out_channels, 3).stride(2).padding(1)),
       relu() {
         register_module("conv1", conv1);
+        register_module("relu1", relu);
         register_module("conv2", conv2);
-        register_module("relu", relu);
+        register_module("relu2", relu);
     }
 
     std::tuple<torch::Tensor, torch::Tensor> forward(torch::Tensor inputs, torch::Tensor input_lengths) {

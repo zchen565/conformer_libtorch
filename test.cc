@@ -114,9 +114,9 @@ void test_basic_convolution() {
 void test_DepthConvolution() {
     int64_t in_channels = 16; // 例如
     int64_t out_channels = 32; // 应该是 in_channels 的倍数
-    int64_t kernel_size = 3;
+    int64_t kernel_size = 31;
     int64_t stride = 1;
-    int64_t padding = 1; // 'SAME' padding
+    int64_t padding = 0; // 'SAME' padding
     bool bias = false;
 
     // 创建 DepthwiseConv1d 模块实例
@@ -124,7 +124,7 @@ void test_DepthConvolution() {
 
     // 创建一个测试输入 Tensor
     torch::Tensor input = torch::rand({1, in_channels, 50}); // 假设 batch_size=1, in_channels=16, length=50
-
+    std::cout << "Input size: " << input.sizes() << std::endl;
     // 运行模块
     torch::Tensor output = depthwiseConv1d->forward(input);
 
@@ -154,17 +154,18 @@ void test_ConformerConvolution() {
     // std::cout << "check what happend" << std::endl;
     // std::cout << "Output size after ConformerConvModule: " << output.sizes() << std::endl;
     // 设置输入参数
-    int64_t in_channels = 16; // 比如
-    int64_t kernel_size = 31;
+    int64_t in_channels = 64; // 比如
+    // int64_t kernel_size = 31;
+
     float dropout_p = 0.1;
     int64_t expansion_factor = 2;
 
     // 创建模块实例
-    ConformerConvModule module(in_channels, kernel_size, dropout_p, expansion_factor);
+    ConformerConvModule module(in_channels);
 
     // 创建一个测试输入 Tensor
-    torch::Tensor input = torch::rand({1, 50, in_channels}); // 假设 batch_size=1, seq_len=50
-
+    torch::Tensor input = torch::rand({16, 100, in_channels}); // 假设 batch_size=1, seq_len=50
+    std::cout << "Input size: " << input.sizes() << std::endl;
     // 运行模块
     torch::Tensor output = module->forward(input);
 
@@ -238,7 +239,7 @@ void test_PositionalEncoding() {
 }
 
 void test_RelativeMultiHeadAttention(){
-    RelativeMultiHeadAttention attention_module;
+    RelativeMultiHeadAttention attention_module(512,16);
 
     // 设置示例输入
     int64_t batch_size = 4;
@@ -250,18 +251,139 @@ void test_RelativeMultiHeadAttention(){
     torch::Tensor key = torch::randn({batch_size, seq_length, d_model});
     torch::Tensor value = torch::randn({batch_size, seq_length, d_model});
     torch::Tensor pos_embedding = torch::randn({batch_size, seq_length, d_model});
-    torch::Tensor mask = torch::randn({batch_size, seq_length}).ge(0.5); // 生成示例的掩码
-
+    torch::Tensor mask = torch::randn({batch_size, seq_length, seq_length}).ge(0.5); // 生成示例的掩码
+    std::cout << "init success "<< std::endl;
     // 调用 forward 函数获取输出
     torch::Tensor output = attention_module->forward(query, key, value, pos_embedding, mask);
+std::cout << "forward success "<< std::endl;
+    // 打印输出的维度
+    std::cout << "Output dimensions: " << output.sizes() << std::endl;
+}
 
+
+void test_RelativeMultiHeadAttention_emptymask(){
+    RelativeMultiHeadAttention attention_module(512,16);
+
+    // 设置示例输入
+    int64_t batch_size = 4;
+    int64_t seq_length = 10;
+    int64_t d_model = 512;
+    int64_t num_heads = 16;
+
+    torch::Tensor query = torch::randn({batch_size, seq_length, d_model});
+    torch::Tensor key = torch::randn({batch_size, seq_length, d_model});
+    torch::Tensor value = torch::randn({batch_size, seq_length, d_model});
+    torch::Tensor pos_embedding = torch::randn({batch_size, seq_length, d_model});
+    // torch::Tensor mask = torch::randn({batch_size, seq_length, seq_length}).ge(0.5); // 生成示例的掩码
+    std::cout << "init success "<< std::endl;
+    // 调用 forward 函数获取输出
+    torch::Tensor output = attention_module->forward(query, key, value, pos_embedding);
+std::cout << "forward success "<< std::endl;
     // 打印输出的维度
     std::cout << "Output dimensions: " << output.sizes() << std::endl;
 
 }
-// embedding.h
+
+void test_MHSA(){
+    int64_t d_model = 512;  // Model dimension
+    int64_t num_heads = 8;  // Number of attention heads
+    double dropout_p = 0.1; // Dropout probability
+    int64_t batch_size = 10; // Batch size
+    int64_t seq_length = 20; // Sequence length
+
+    // Initialize the module
+    MultiHeadedSelfAttentionModule attention_module(d_model, num_heads, dropout_p);
+
+    // Generate random inputs
+    torch::Tensor inputs = torch::rand({batch_size, seq_length, d_model});
+    torch::Tensor mask; // Empty mask for this test
+
+    // Forward pass
+    torch::Tensor outputs = attention_module->forward(inputs, mask);
+
+    // Check output dimensions
+    std::cout << "Output dimensions: " << outputs.sizes() << std::endl;
+
+    // Verify if output dimensions match the expected dimensions
+    // if (outputs.size(0) == batch_size && outputs.size(1) == seq_length && outputs.size(2) == d_model) {
+    //     std::cout << "Test passed: Output dimensions are correct." << std::endl;
+    // } else {
+    //     std::cout << "Test failed: Output dimensions are incorrect." << std::endl;
+    // }
+}
+
+void test_MHSA_emptymask(){
+    int64_t d_model = 512;  // Model dimension
+    int64_t num_heads = 8;  // Number of attention heads
+    double dropout_p = 0.1; // Dropout probability
+    int64_t batch_size = 10; // Batch size
+    int64_t seq_length = 20; // Sequence length
+
+    // Initialize the module
+    MultiHeadedSelfAttentionModule attention_module(d_model, num_heads, dropout_p);
+
+    // Generate random inputs
+    torch::Tensor inputs = torch::rand({batch_size, seq_length, d_model});
+    // Forward pass
+    std::cout << "start forward\n";
+    torch::Tensor outputs = attention_module->forward(inputs);
+    std::cout << "start forward\n";
+    // Check output dimensions
+    std::cout << "Output dimensions: " << outputs.sizes() << std::endl;
+
+    // Verify if output dimensions match the expected dimensions
+    if (outputs.size(0) == batch_size && outputs.size(1) == seq_length && outputs.size(2) == d_model) {
+        std::cout << "Test passed: Output dimensions are correct." << std::endl;
+    } else {
+        std::cout << "Test failed: Output dimensions are incorrect." << std::endl;
+    }
+}
 // conformer_encoder.h
-// model.h
+
+void test_ConformerBlock(){
+
+    // Create a ConformerBlock instance
+    ConformerBlock conformerBlock(512); // default encoder_dim = 512
+
+    // Create a dummy input tensor of shape (batch_size, time, dim)
+    int64_t batch_size = 1;
+    int64_t time = 100;
+    int64_t dim = 512; // This should match the encoder_dim of ConformerBlock
+    auto input = torch::randn({batch_size, time, dim});
+
+    // Forward pass
+
+    std::cout << "test_305" << std::endl;
+    torch::Tensor output = conformerBlock->forward(input);
+    
+    std::cout << "test_308" << std::endl;
+    // Check the output dimensions
+    if (output.sizes() == input.sizes()) {
+        std::cout << "Test passed! Output dimensions match the input dimensions." << std::endl;
+    } else {
+        std::cerr << "Test failed! Output dimensions do not match the expected dimensions." << std::endl;
+    }
+}
+
+void test_ConformerEncoder() {
+    int64_t batch_size = 4;  // 批量大小
+    int64_t input_dim = 80; // 输入维度
+
+    // 创建 ConformerEncoder 实例
+    ConformerEncoder encoder(input_dim);
+
+    // 创建模拟输入数据
+    torch::Tensor inputs = torch::randn({batch_size, input_dim, 100}); // 假设输入序列长度为 100
+    std::cout << "Input shape: " << inputs.sizes() << std::endl;
+    // 前向传递
+    torch::Tensor input_lengths = torch::full({batch_size}, 100, torch::kInt64); //?
+    std::cout <<"test shape : " << input_lengths.sizes() << std::endl;
+    torch::Tensor outputs = encoder->forward(inputs, input_lengths);
+
+    // 打印输出的形状
+    std::cout << "Output shape: " << outputs.sizes() << std::endl;
+
+}
 int main(int argc, char const *argv[])
 {
     // basic.h
@@ -273,14 +395,21 @@ int main(int argc, char const *argv[])
     // convolution.h
     test_basic_convolution();
     test_DepthConvolution();
-    test_ConformerConvolution(); // note line 98 why [1,16,50]->[1,16,20] // some problem here
+    test_ConformerConvolution(); // note line 98 why [1,16,50]->[1,16,20] // this is correct !
     test_Convolution2dSampling();
 
     // attention.h
-    // test_PositionalEncoding();
-    // test_RelativeMultiHeadAttention();
+    test_PositionalEncoding();
+    test_RelativeMultiHeadAttention();
+    test_RelativeMultiHeadAttention_emptymask();
+    test_MHSA();
+    test_MHSA_emptymask();
     
+    // conformer_encoder.h
+    test_ConformerBlock();
 
-
+    // test_ConformerEncoder(); 
+    // note we need to specify the exact input size to fit the model for test (including the test case!)
+    // this is corrent
     return 0;
 }
