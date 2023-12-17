@@ -8,9 +8,12 @@ strictly following the paper of Conformer
 
 ## Instruction
 sh install.sh
-sh prepare.sh
+
 sh run.sh
+
 ./build/test
+
+sh prepare.sh (optional for data prepare and preprocess)
 
 ## 
 
@@ -29,9 +32,9 @@ this is not complete, I am not able to get a full training. Still too challangin
 
 All the code can be compiled !
 
-but still has some issues, 
+All module test passed ! (test with dimension check)
 
-I am not able to get a full training.
+I am currently not able to get a full training in libtorch.
 
 Libtorch still have some issue
 
