@@ -1,3 +1,8 @@
+# NOTE !
+# my code submission is under /home/zc2645/conformer_libtorch
+
+# since i don't use kaldi, I did not put the file in kaldi foler
+
 # conformer_libtorch
 
 a libtorch version of conformer encoder with a simple decoder
